@@ -16,8 +16,18 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+RUN apt-get update && apt-get install -y \
+    libfreetype6-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libwebp-dev \
+    libzip-dev \
+    libxml2-dev \
+    unzip \
+    curl \
+    cron \
     && docker-php-ext-install gd mbstring pdo pdo_mysql zip xml
+
 
 # Enable Apache modules
 RUN a2enmod rewrite
