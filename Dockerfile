@@ -1,50 +1,50 @@
 FROM php:8.2-apache
 
-# Install system dependencies
+# Install tools & dependensi
 RUN apt-get update && apt-get install -y \
     cron \
-    libpng-dev \
-    libjpeg-dev \
+    unzip \
+    curl \
+    pkg-config \
     libfreetype6-dev \
+    libjpeg-dev \
+    libpng-dev \
     libwebp-dev \
     libzip-dev \
     libxml2-dev \
-    unzip \
-    curl \
-    nano \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN apt-get update && \
-    apt-get install -y \
-    libfreetype6-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libwebp-dev \
-    libzip-dev \
-    libxml2-dev \
-    unzip \
-    curl \
-    cron \
-    pkg-config && \
-    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
-    docker-php-ext-install gd mbstring pdo pdo_mysql zip xml
+# Konfigurasi GD
+RUN docker-php-ext-configure gd \
+    --with-freetype \
+    --with-jpeg \
+    --with-webp
 
+# Install ekstensi PHP
+RUN docker-php-ext-install -j$(nproc) \
+    gd \
+    mbstring \
+    pdo \
+    pdo_mysql \
+    zip \
+    xml
 
-
-# Enable Apache modules
+# Aktifkan mod_rewrite misalnya
 RUN a2enmod rewrite
 
-# Set working directory
+# Copy kode aplikasi
 WORKDIR /var/www/html
+COPY . /var/www/html
 
-# Set up cron job
-RUN echo "* * * * * www-data php /var/www/html/system/cron.php >> /var/log/phpnuxbill_cron.log 2>&1" > /etc/cron.d/phpnuxbill \
+# Atur izin
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
+
+# Setup cron
+RUN echo "* * * * * www-data php /var/www/html/system/cron.php >> /var/log/cron.log 2>&1" > /etc/cron.d/phpnuxbill \
     && chmod 0644 /etc/cron.d/phpnuxbill \
     && crontab /etc/cron.d/phpnuxbill
 
-# Copy entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
