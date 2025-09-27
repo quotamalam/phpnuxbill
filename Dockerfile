@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y \
     libfreetype6-dev \
     libjpeg-dev \
     libpng-dev \
@@ -26,7 +27,10 @@ RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     cron \
-    && docker-php-ext-install gd mbstring pdo pdo_mysql zip xml
+    pkg-config && \
+    docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp && \
+    docker-php-ext-install gd mbstring pdo pdo_mysql zip xml
+
 
 
 # Enable Apache modules
