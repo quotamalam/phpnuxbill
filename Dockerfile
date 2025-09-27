@@ -1,26 +1,38 @@
-# Use the official PHP image with Apache
-FROM php:7.4-apache
-EXPOSE 80
-# Install necessary PHP extensions
+FROM php:8.2-apache
+
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
+    cron \
     libpng-dev \
-    zlib1g-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libwebp-dev \
     libzip-dev \
-    zip \
+    libxml2-dev \
     unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-install pdo pdo_mysql \
-    && docker-php-ext-install zip
+    curl \
+    nano \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# copy contents into directory
-COPY . /var/www/html
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install gd mbstring pdo pdo_mysql zip xml
 
-# Set appropriate permissions
-RUN chown -R www-data:www-data /var/www/html
-RUN chmod -R 755 /var/www/html
+# Enable Apache modules
+RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
+
+# Set up cron job
+RUN echo "* * * * * www-data php /var/www/html/system/cron.php >> /var/log/phpnuxbill_cron.log 2>&1" > /etc/cron.d/phpnuxbill \
+    && chmod 0644 /etc/cron.d/phpnuxbill \
+    && crontab /etc/cron.d/phpnuxbill
+
+# Copy entrypoint
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
